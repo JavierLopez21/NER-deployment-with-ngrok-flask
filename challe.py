@@ -1,32 +1,29 @@
-from flask import Flask, request, jsonify
+
+from flask import Flask, request, jsonify, render_template
 import spacy
-spacy.load('es_core_news_sm')
-
-# Inicializar Flask
-app = Flask(__name__)
-
-# Cargar el modelo de Spacy para español
 nlp = spacy.load("es_core_news_sm")
 
-# Ruta para procesar las oraciones y obtener las entidades nombradas
-@app.route('/ner', methods=['POST'])
-def named_entity_recognition():
-    try:
-        # Obtener la lista de oraciones en formato JSON desde la solicitud POST
-        data = request.get_json()
-        sentences = data.get('sentences', [])
 
-        # Procesar cada oración y obtener las entidades nombradas
-        result = []
-        for sentence in sentences:
-            doc = nlp(sentence)
-            entities = [(ent.text, ent.label_) for ent in doc.ents]
-            result.append(entities)
+# Create flask app
+flask_app = Flask(__name__)
 
-        return jsonify({"result": result})
 
-    except Exception as e:
-        return jsonify({"error": str(e)})
+@flask_app.route("/")
+def Home():
+    return render_template("index1")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@flask_app.route("/predict", methods = ["POST"])
+def predict():
+    
+    sentences = request.form.values()
+    sentences_list = [s.strip() for s in ''.join(sentences).split('\n')]
+    result = {}
+    for idx, sentence in enumerate(sentences_list):
+        doc = nlp(sentence)
+        entities = [(ent.text, ent.label_) for ent in doc.ents]
+        result[idx] = entities
+
+    return render_template("index1", prediction_text = "The flower species is {}".format(result))
+
+if __name__ == "__main__":
+    flask_app.run(debug=True)
